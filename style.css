@@ -1,0 +1,170 @@
+:root {
+  --paper:  #0e3a63;
+  --paper2: #0a2c4d;
+  --ink:    #e9f2fc;
+  --ink-2:  #93b4d6;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; font: inherit; }
+html, body { height: 100%; }
+body {
+  background:
+    radial-gradient(120% 90% at 50% -20%, #14497a 0%, var(--paper) 45%, var(--paper2) 100%);
+  color: var(--ink);
+  overflow: hidden;
+  cursor: crosshair;
+  -webkit-user-select: none;
+  user-select: none;
+  font-family: "Architects Daughter", cursive;
+}
+body.resolved { cursor: default; }
+
+svg#sheet { position: fixed; inset: 0; display: block; }
+
+/* ---- SVG element styling ---- */
+.grid-min { stroke: rgba(255,255,255,.045); stroke-width: 1; }
+.grid-maj { stroke: rgba(255,255,255,.085); stroke-width: 1; }
+.frame    { fill: none; stroke: rgba(255,255,255,.16); stroke-width: 1; }
+.baseline { stroke: rgba(255,255,255,.10); stroke-width: 1; stroke-dasharray: 1 8; }
+
+.ln    { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; }
+.dash  { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 7 7; }
+.ring  { fill: none; stroke: var(--ink); stroke-width: 1.7; }
+.dot   { fill: var(--ink); }
+
+.dim   { fill: none; stroke: var(--ink-2); stroke-width: 1; }
+.ext   { fill: none; stroke: var(--ink-2); stroke-width: 1; opacity: .55; }
+
+.tri       { stroke: var(--ink);   stroke-width: 1.5; fill: rgba(233,242,252,.10); stroke-linejoin: round; }
+.tri-ghost { stroke: var(--ink-2); stroke-width: 1.3; fill: none; stroke-dasharray: 4 4; stroke-linejoin: round; }
+
+.ghost { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 3 6; opacity: .45; }
+
+.txt   { font-family: "Architects Daughter", cursive; fill: var(--ink);   font-size: 16px; letter-spacing: .3px; }
+.txt-d { font-family: "Architects Daughter", cursive; fill: var(--ink-2); font-size: 15px; letter-spacing: .3px; }
+
+/* ---- HTML overlay ---- */
+.overlay { position: fixed; pointer-events: none; }
+
+#title {
+  top: 22px; left: 30px;
+  font-size: 30px; font-weight: 500; letter-spacing: 6px;
+  text-transform: uppercase;
+  opacity: .95;
+}
+#title::after {
+  content: ""; display: block;
+  width: 46px; height: 1px; margin-top: 6px;
+  background: var(--ink-2); opacity: .6;
+}
+
+#stats {
+  top: 24px; right: 30px;
+
+  display: grid; grid-template-columns: auto auto;
+  gap: 2px 16px; text-align: right;
+  font-size: 17px;
+}
+#stats .k { color: var(--ink-2); letter-spacing: 2px; text-transform: uppercase; font-size: 13px; align-self: center; }
+#stats .v { color: var(--ink); }
+
+/* ---- round result popup ---- */
+#round-result {
+  position: fixed; inset: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background: radial-gradient(120% 90% at 50% 28%, rgba(20,73,122,.4), rgba(7,25,44,.75));
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  opacity: 0; pointer-events: none;
+  transition: opacity .4s ease 1.5s;
+}
+#round-result:not(.show) {
+  transition: opacity .15s ease 0s;
+}
+#round-result.show { opacity: 1; pointer-events: auto; }
+.result-card {
+  width: 100%; max-width: 320px;
+  padding: 28px 32px 26px; text-align: center;
+  background: rgba(13, 49, 83, .78);
+  border: 1px solid rgba(147,180,214,.5); border-radius: 3px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.04);
+}
+.result-round-label {
+
+  color: var(--ink-2); font-size: 12px; letter-spacing: 3px;
+  text-transform: uppercase; margin-bottom: 14px;
+}
+.result-score {
+  font-size: 80px; line-height: 1; letter-spacing: 1px;
+}
+.result-score .deg { font-size: 44px; opacity: .7; }
+.result-verdict {
+
+  color: var(--ink-2); font-size: 13px; letter-spacing: 4px;
+  text-transform: uppercase; margin-top: 6px;
+}
+.result-divider {
+  width: 46px; height: 1px; margin: 18px auto; background: var(--ink-2); opacity: .4;
+}
+.result-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 4px 0; margin-bottom: 22px;
+}
+.result-stats .rs-k {
+
+  color: var(--ink-2); font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; display: block;
+}
+.result-stats .rs-v {
+  color: var(--ink); font-size: 24px; display: block;
+}
+.result-card button {
+
+  font-size: 17px; letter-spacing: 2px; color: var(--ink);
+  background: rgba(233,242,252,.05);
+  border: 1px solid var(--ink-2); border-radius: 2px;
+  padding: 9px 28px; cursor: pointer;
+  transition: background .2s ease, border-color .2s ease;
+}
+.result-card button:hover { background: rgba(233,242,252,.13); border-color: var(--ink); }
+.result-card button:active { transform: translateY(1px); }
+
+/* ---- intro overlay ---- */
+#intro {
+  position: fixed; inset: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background: radial-gradient(120% 90% at 50% 28%, rgba(20,73,122,.5), rgba(7,25,44,.82));
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  transition: opacity .5s ease;
+  cursor: pointer;
+}
+#intro.hide { opacity: 0; pointer-events: none; }
+.intro-card {
+  width: 100%; max-width: 384px;
+  padding: 32px 34px 28px; text-align: center;
+  background: rgba(13, 49, 83, .72);
+  border: 1px solid rgba(147,180,214,.5); border-radius: 3px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04);
+  cursor: default;
+}
+.intro-card h1 {
+  font-size: 30px; letter-spacing: 7px; text-transform: uppercase; color: var(--ink);
+}
+.intro-rule { width: 46px; height: 1px; margin: 9px auto 20px; background: var(--ink-2); opacity: .6; }
+.intro-dia { width: 100%; max-width: 230px; height: auto; display: block; margin: 0 auto 20px; opacity: .95; }
+.intro-card p {
+  font-size: 17px; line-height: 1.5; color: var(--ink);
+  margin: 0 auto 10px; max-width: 304px;
+}
+.intro-card p em { font-style: normal; color: var(--ink-2); }
+.intro-card button {
+  margin-top: 16px;
+
+  font-size: 19px; letter-spacing: 2px; color: var(--ink);
+  background: rgba(233,242,252,.05);
+  border: 1px solid var(--ink-2); border-radius: 2px;
+  padding: 9px 32px; cursor: pointer;
+  transition: background .2s ease, border-color .2s ease;
+}
+.intro-card button:hover { background: rgba(233,242,252,.13); border-color: var(--ink); }
+.intro-card button:active { transform: translateY(1px); }
