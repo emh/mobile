@@ -6,41 +6,30 @@
   <title>Fulcrum</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <svg id="sheet" xmlns="http://www.w3.org/2000/svg"></svg>
+  <svg id="sheet" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet"></svg>
 
   <div class="overlay" id="title">fulcrum</div>
 
   <div class="overlay" id="stats">
-    <div class="k">Rounds</div><div class="v" id="stRounds">0</div>
-    <div class="k">Best</div><div class="v" id="stBest">&mdash;</div>
-    <div class="k">Avg</div><div class="v" id="stAvg">&mdash;</div>
+    <div class="k">Level</div><div class="v" id="stLevel">1</div>
+    <div class="k">Score</div><div class="v" id="stScore">&mdash;</div>
   </div>
 
-  <div id="round-result">
-    <div class="result-card">
-      <div class="result-round-label">Round <span id="resRound">1</span></div>
-      <div class="result-score"><span id="resScore">0.0</span><span class="deg">&deg;</span></div>
-      <div class="result-verdict" id="resVerdict">lean</div>
-      <div class="result-divider"></div>
-      <div class="result-stats">
-        <div><span class="rs-k">Rounds</span><span class="rs-v" id="resRounds">1</span></div>
-        <div><span class="rs-k">Best</span><span class="rs-v" id="resBest">&mdash;</span></div>
-        <div><span class="rs-k">Avg</span><span class="rs-v" id="resAvg">&mdash;</span></div>
-      </div>
-      <button type="button" id="playAgainBtn">play again</button>
-    </div>
+  <div id="endBtns">
+    <button id="startOverBtn" type="button">start over</button>
+    <button id="nextLevelBtn" type="button">next level</button>
   </div>
 
   <div id="intro">
     <div class="intro-card" role="dialog" aria-label="How to play">
       <h1>fulcrum</h1>
       <div class="intro-rule"></div>
-      <svg class="intro-dia" viewBox="0 0 260 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <line x1="28" y1="82" x2="232" y2="82" class="baseline" />
+      <svg class="intro-dia" viewBox="0 0 260 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <line x1="130" y1="18" x2="130" y2="50" class="string" />
         <g transform="rotate(7 130 50)">
           <line x1="46" y1="50" x2="214" y2="50" class="ln" />
           <circle cx="46"  cy="50" r="16" class="ring" />
@@ -48,10 +37,17 @@
           <circle cx="46"  cy="50" r="2.4" class="dot" />
           <circle cx="214" cy="50" r="2.4" class="dot" />
         </g>
-        <path d="M130 50 L117 74 L143 74 Z" class="tri" />
+        <line x1="130" y1="50" x2="130" y2="110" class="string" />
+        <g transform="rotate(-5 130 90)">
+          <line x1="88" y1="90" x2="172" y2="90" class="ln" />
+          <circle cx="88"  cy="90" r="12" class="ring" />
+          <circle cx="172" cy="90" r="18" class="ring" />
+          <circle cx="88"  cy="90" r="2" class="dot" />
+          <circle cx="172" cy="90" r="2" class="dot" />
+        </g>
       </svg>
-      <p>Two discs of unequal weight rest on a level beam.</p>
-      <p>Tap to set the <em>fulcrum</em> where you think it balances. The beam tips to reveal its lean &mdash; aim for 0&deg;.</p>
+      <p>Discs of unequal weight hang from a mobile.</p>
+      <p>Tap to set each <em>balance point</em> — starting from the bottom. Aim for 0&deg; lean on every rod.</p>
       <button type="button" id="beginBtn">begin</button>
     </div>
   </div>
