@@ -27,9 +27,7 @@ svg#sheet { position: fixed; inset: 0; display: block; }
 .baseline { stroke: rgba(0,0,0,.08);  stroke-width: 1; stroke-dasharray: 1 8; }
 
 .ln    { fill: none; stroke: var(--ink); stroke-width: 3;   stroke-linecap: round; }
-.dash  { fill: none; stroke: var(--ink); stroke-width: 3;   stroke-linecap: round; stroke-dasharray: 6 6; }
 .ring  { fill: none; stroke: var(--ink); stroke-width: 2; }
-.disc-fill { stroke: var(--ink); stroke-width: 1.5; }
 .dot   { fill: var(--ink); }
 
 .dim   { fill: none; stroke: var(--ink-2); stroke-width: 1; }
@@ -64,7 +62,8 @@ svg#sheet { position: fixed; inset: 0; display: block; }
   font-size: 17px;
 }
 #stats .k { color: var(--ink-2); letter-spacing: 3px; text-transform: uppercase; font-size: 12px; align-self: center; }
-#stats .v { color: var(--ink); }
+#stats .v { color: var(--ink); font-variant-numeric: tabular-nums; }
+#stScore   { min-width: 4.5ch; }
 
 /* ---- end-of-level buttons ---- */
 #endBtns {
