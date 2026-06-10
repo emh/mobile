@@ -1,20 +1,19 @@
 :root {
-  --paper:  #0e3a63;
-  --paper2: #0a2c4d;
-  --ink:    #e9f2fc;
-  --ink-2:  #93b4d6;
+  --paper:  #F4F1EA;
+  --paper2: #EAE6DC;
+  --ink:    #111111;
+  --ink-2:  #777777;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; font: inherit; }
 html, body { height: 100%; }
 body {
-  background:
-    radial-gradient(120% 90% at 50% -20%, #14497a 0%, var(--paper) 45%, var(--paper2) 100%);
+  background: var(--paper);
   color: var(--ink);
   overflow: hidden;
   cursor: crosshair;
   -webkit-user-select: none;
   user-select: none;
-  font-family: "Architects Daughter", cursive;
+  font-family: "Baumans", sans-serif;
 }
 body.review         { cursor: grab; }
 body.review.panning { cursor: grabbing; }
@@ -22,38 +21,40 @@ body.review.panning { cursor: grabbing; }
 svg#sheet { position: fixed; inset: 0; display: block; }
 
 /* ---- SVG element styling ---- */
-.grid-min { stroke: rgba(255,255,255,.045); stroke-width: 1; }
-.grid-maj { stroke: rgba(255,255,255,.085); stroke-width: 1; }
-.frame    { fill: none; stroke: rgba(255,255,255,.16); stroke-width: 1; }
-.baseline { stroke: rgba(255,255,255,.10); stroke-width: 1; stroke-dasharray: 1 8; }
+.grid-min { stroke: rgba(0,0,0,.04);  stroke-width: 1; }
+.grid-maj { stroke: rgba(0,0,0,.08);  stroke-width: 1; }
+.frame    { fill: none; stroke: rgba(0,0,0,.14); stroke-width: 1; }
+.baseline { stroke: rgba(0,0,0,.08);  stroke-width: 1; stroke-dasharray: 1 8; }
 
-.ln    { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; }
-.dash  { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 7 7; }
-.ring  { fill: none; stroke: var(--ink); stroke-width: 1.7; }
+.ln    { fill: none; stroke: var(--ink); stroke-width: 3;   stroke-linecap: round; }
+.dash  { fill: none; stroke: var(--ink); stroke-width: 3;   stroke-linecap: round; stroke-dasharray: 6 6; }
+.ring  { fill: none; stroke: var(--ink); stroke-width: 2; }
+.disc-fill { stroke: var(--ink); stroke-width: 1.5; }
 .dot   { fill: var(--ink); }
 
 .dim   { fill: none; stroke: var(--ink-2); stroke-width: 1; }
-.ext   { fill: none; stroke: var(--ink-2); stroke-width: 1; opacity: .55; }
+.ext   { fill: none; stroke: var(--ink-2); stroke-width: 1; opacity: .6; }
 
-.ghost  { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 3 6; opacity: .45; }
-.string { stroke: var(--ink-2); stroke-width: 1; opacity: .55; }
+.ghost  { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 7; opacity: .28; }
+.string { stroke: var(--ink); stroke-width: 1; opacity: .4; }
 
-.txt   { font-family: "Architects Daughter", cursive; fill: var(--ink);   font-size: 16px; letter-spacing: .3px; }
-.txt-d { font-family: "Architects Daughter", cursive; fill: var(--ink-2); font-size: 15px; letter-spacing: .3px; }
+.txt      { font-family: "Baumans", sans-serif; fill: var(--ink);   font-size: 16px; letter-spacing: .5px; }
+.txt-d    { font-family: "Baumans", sans-serif; fill: var(--ink-2); font-size: 15px; letter-spacing: .5px; }
+.lbl-lean { font-family: "Baumans", sans-serif; fill: var(--ink);   font-size: 19px; letter-spacing: 1px; }
 
 /* ---- HTML overlays ---- */
 .overlay { position: fixed; pointer-events: none; }
 
 #title {
   top: 22px; left: 30px;
-  font-size: 30px; font-weight: 500; letter-spacing: 6px;
+  font-size: 26px; font-weight: 400; letter-spacing: 8px;
   text-transform: uppercase;
-  opacity: .95;
+  opacity: .88;
 }
 #title::after {
   content: ""; display: block;
-  width: 46px; height: 1px; margin-top: 6px;
-  background: var(--ink-2); opacity: .6;
+  width: 46px; height: 1.5px; margin-top: 6px;
+  background: var(--ink); opacity: .2;
 }
 
 #stats {
@@ -62,7 +63,7 @@ svg#sheet { position: fixed; inset: 0; display: block; }
   gap: 2px 16px; text-align: right;
   font-size: 17px;
 }
-#stats .k { color: var(--ink-2); letter-spacing: 2px; text-transform: uppercase; font-size: 13px; align-self: center; }
+#stats .k { color: var(--ink-2); letter-spacing: 3px; text-transform: uppercase; font-size: 12px; align-self: center; }
 #stats .v { color: var(--ink); }
 
 /* ---- end-of-level buttons ---- */
@@ -80,18 +81,29 @@ svg#sheet { position: fixed; inset: 0; display: block; }
   -webkit-user-select: none; user-select: none;
 }
 #endBtns.show { opacity: 1; pointer-events: auto; }
-#endBtns button {
-  font-family: "Architects Daughter", cursive;
-  font-size: 19px;
-  letter-spacing: 2px;
-  color: var(--ink);
-  background: rgba(13, 49, 83, .72);
-  border: 1px solid rgba(147,180,214,.5);
-  border-radius: 2px;
-  padding: 11px 36px;
-  cursor: pointer;
+#gameOverLabel {
+  display: none;
+  font-size: 17px; letter-spacing: 3px; text-transform: uppercase;
+  color: #CC2200;
+  align-self: center;
+  padding: 10px 0;
 }
-#endBtns button:hover { background: rgba(233,242,252,.13); border-color: var(--ink); }
+#endBtns.gameover #gameOverLabel { display: block; }
+#endBtns.gameover #nextLevelBtn  { display: none; }
+#endBtns button {
+  font-family: "Baumans", sans-serif;
+  font-size: 16px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: transparent;
+  border: 1.5px solid var(--ink);
+  border-radius: 0;
+  padding: 10px 32px;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+#endBtns button:hover  { background: rgba(0,0,0,.07); }
 #endBtns button:active { transform: translateY(1px); }
 
 /* ---- intro overlay ---- */
@@ -99,7 +111,7 @@ svg#sheet { position: fixed; inset: 0; display: block; }
   position: fixed; inset: 0; z-index: 20;
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
-  background: radial-gradient(120% 90% at 50% 28%, rgba(20,73,122,.5), rgba(7,25,44,.82));
+  background: rgba(244, 241, 234, .90);
   -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   transition: opacity .5s ease;
   cursor: pointer;
@@ -108,28 +120,28 @@ svg#sheet { position: fixed; inset: 0; display: block; }
 .intro-card {
   width: 100%; max-width: 384px;
   padding: 32px 34px 28px; text-align: center;
-  background: rgba(13, 49, 83, .72);
-  border: 1px solid rgba(147,180,214,.5); border-radius: 3px;
-  box-shadow: 0 24px 70px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04);
+  background: var(--paper);
+  border: 1.5px solid var(--ink); border-radius: 0;
+  box-shadow: 5px 5px 0 rgba(0,0,0,.12);
   cursor: default;
 }
 .intro-card h1 {
-  font-size: 30px; letter-spacing: 7px; text-transform: uppercase; color: var(--ink);
+  font-size: 26px; letter-spacing: 9px; text-transform: uppercase; color: var(--ink);
 }
-.intro-rule { width: 46px; height: 1px; margin: 9px auto 20px; background: var(--ink-2); opacity: .6; }
-.intro-dia { width: 100%; max-width: 230px; height: auto; display: block; margin: 0 auto 20px; opacity: .95; }
+.intro-rule { width: 46px; height: 1.5px; margin: 10px auto 20px; background: var(--ink); opacity: .2; }
+.intro-dia { width: 100%; max-width: 230px; height: auto; display: block; margin: 0 auto 20px; }
 .intro-card p {
-  font-size: 17px; line-height: 1.5; color: var(--ink);
+  font-size: 16px; line-height: 1.55; color: var(--ink);
   margin: 0 auto 10px; max-width: 304px;
 }
 .intro-card p em { font-style: normal; color: var(--ink-2); }
 .intro-card button {
   margin-top: 16px;
-  font-size: 19px; letter-spacing: 2px; color: var(--ink);
-  background: rgba(233,242,252,.05);
-  border: 1px solid var(--ink-2); border-radius: 2px;
+  font-size: 16px; letter-spacing: 3px; text-transform: uppercase; color: var(--ink);
+  background: transparent;
+  border: 1.5px solid var(--ink); border-radius: 0;
   padding: 9px 32px; cursor: pointer;
-  transition: background .2s ease, border-color .2s ease;
+  transition: background .15s ease;
 }
-.intro-card button:hover { background: rgba(233,242,252,.13); border-color: var(--ink); }
+.intro-card button:hover  { background: rgba(0,0,0,.07); }
 .intro-card button:active { transform: translateY(1px); }

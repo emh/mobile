@@ -12,6 +12,9 @@
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const rand  = (a, b)    => a + Math.random() * (b - a);
 
+  const DISC_COLORS         = ["#CC2200", "#0033AA", "#F5C400"];
+  const GAME_OVER_THRESHOLD = 15;   // cumulative degrees before game over
+
   // ── State ─────────────────────────────────────────────────────────────────────
   let root           = null;
   let level          = 1;
@@ -26,7 +29,7 @@
   let pinchStartVb   = null;
   let panTouchStart  = null;
 
-  const stats = { total: 0 };
+  const stats = { score: 0, lean: 0 };
 
   // ── Arm constructors ─────────────────────────────────────────────────────────
   const disc = () => ({ type: "disc", relR: rand(0.14, 0.24) });
@@ -38,9 +41,20 @@
   });
 
   // ── Level generation ─────────────────────────────────────────────────────────
+  function assignDiscColors(arm) {
+    if (arm.type === "disc") return;
+    const ci = Math.floor(Math.random() * DISC_COLORS.length);
+    let oi;
+    do { oi = Math.floor(Math.random() * DISC_COLORS.length); } while (oi === ci);
+    if (arm.left.type  === "disc") arm.left.color  = DISC_COLORS[ci];
+    if (arm.right.type === "disc") arm.right.color = DISC_COLORS[oi];
+    assignDiscColors(arm.left);
+    assignDiscColors(arm.right);
+  }
+
   function buildLevel(n) {
     const root = rod(disc(), disc());
-    if (n === 1) return root;
+    if (n === 1) { assignDiscColors(root); return root; }
     const queue = [
       { parent: root, side: "right" },
       { parent: root, side: "left"  },
@@ -54,6 +68,7 @@
         { parent: child, side: "left"  },
       );
     }
+    assignDiscColors(root);
     return root;
   }
 
@@ -119,15 +134,20 @@
   }
 
   // ── Scoring ──────────────────────────────────────────────────────────────────
-  function totalScore(arm) {
+  // Total lean in degrees for this level (used for game-over tracking).
+  function totalLean(arm) {
     if (arm.type === "disc") return 0;
     const own = arm.pivotFrac !== null ? Math.abs(arm.leanDeg) : 0;
-    return own + totalScore(arm.left) + totalScore(arm.right);
+    return own + totalLean(arm.left) + totalLean(arm.right);
   }
 
-  function rodCount(arm) {
+  // Points for this level: 100 per rod at 0°, quadratic falloff to 0 at MAXA.
+  function levelScore(arm) {
     if (arm.type === "disc") return 0;
-    return 1 + rodCount(arm.left) + rodCount(arm.right);
+    const own = arm.pivotFrac !== null
+      ? Math.round(100 * Math.max(0, 1 - Math.abs(arm.leanDeg) / MAXA) ** 2)
+      : 0;
+    return own + levelScore(arm.left) + levelScore(arm.right);
   }
 
   // ── Bounding box ─────────────────────────────────────────────────────────────
@@ -177,33 +197,7 @@
   }
 
   const mkline = (x1, y1, x2, y2, cls) => S("line", { x1, y1, x2, y2, class: cls });
-  const mktext = (x, y, str, cls, anc) => {
-    const t = S("text", { x, y, class: cls || "txt" }, str);
-    if (anc) t.setAttribute("text-anchor", anc);
-    return t;
-  };
-  const ext   = (x1, y1, x2, y2) => mkline(x1, y1, x2, y2, "ext");
-  const arrow = (x1, y1, x2, y2) => S("line", {
-    x1, y1, x2, y2, class: "dim",
-    "marker-start": "url(#arw)", "marker-end": "url(#arw)",
-  });
 
-  // ── Defs ─────────────────────────────────────────────────────────────────────
-  function buildDefs() {
-    const defs = S("defs");
-    const pmin = S("pattern", { id: "gmin", width: 28, height: 28,
-      patternUnits: "userSpaceOnUse", patternTransform: "translate(0,0)" });
-    pmin.appendChild(S("path", { d: "M28 0 H0 V28", class: "grid-min", fill: "none" }));
-    const pmaj = S("pattern", { id: "gmaj", width: 140, height: 140,
-      patternUnits: "userSpaceOnUse", patternTransform: "translate(0,0)" });
-    pmaj.appendChild(S("path", { d: "M140 0 H0 V140", class: "grid-maj", fill: "none" }));
-    const arw = S("marker", { id: "arw", markerWidth: 7, markerHeight: 7,
-      refX: 6, refY: 3, orient: "auto-start-reverse", markerUnits: "userSpaceOnUse" });
-    arw.appendChild(S("path", { d: "M0,0 L6,3 L0,6", fill: "none",
-      stroke: "var(--ink-2)", "stroke-width": 1 }));
-    defs.append(pmin, pmaj, arw);
-    return defs;
-  }
 
   // ── Camera ───────────────────────────────────────────────────────────────────
   function computeViewBox(b, margin) {
@@ -308,7 +302,14 @@
     const hangX  = r.cx;
     const delta  = hangX - (r.xL + r.pivotFrac * r.span);
     const start  = performance.now();
-    const DUR    = 1450, decay = 3.2, freq = 7.4;
+    const DUR    = 1800, decay = 2.4, freq = 5.2;
+
+    const leanLabel = S("text", {
+      x: r.cx, y: r.cy + 52,
+      class: "lbl-lean", "text-anchor": "middle",
+    }, "0.0°");
+    r.outerGroup.appendChild(leanLabel);
+
     function frame(now) {
       const ms = now - start, t = ms / 1000;
       r.leanDeg = ms >= DUR
@@ -317,7 +318,8 @@
       r.svgGroup.setAttribute("transform",
         `rotate(${r.leanDeg} ${hangX} ${r.cy}) translate(${delta} 0)`);
       propagateTilt(r, 0, 0);
-      applyViewBox(tiltedRodViewBox(r));   // keep rod centred as it slides + swings
+      applyViewBox(tiltedRodViewBox(r));
+      leanLabel.textContent = Math.abs(r.leanDeg).toFixed(1) + "°";
       if (ms >= DUR) { done(); return; }
       requestAnimationFrame(frame);
     }
@@ -355,93 +357,6 @@
     });
   }
 
-  // ── Dimension callouts ────────────────────────────────────────────────────────
-  function discCallout(g, cx, cy, radius, w, dir) {
-    const dx  = cx + dir * (radius + 28);
-    const anc = dir < 0 ? "end" : "start";
-    const tx  = dx + dir * 10;
-    g.append(ext(cx, cy - radius, dx, cy - radius),
-             ext(cx, cy + radius, dx, cy + radius));
-    g.appendChild(arrow(dx, cy - radius, dx, cy + radius));
-    g.appendChild(mktext(tx, cy - 5,  "⌀ " + R(2 * radius), "txt",   anc));
-    g.appendChild(mktext(tx, cy + 18, "W " + R(w / 100),     "txt-d", anc));
-  }
-
-  function rodArmCallout(g, ex, cy, w, dir) {
-    const tx  = ex + dir * 12;
-    const anc = dir < 0 ? "end" : "start";
-    g.appendChild(mktext(tx, cy - 5, "W " + R(w / 100), "txt-d", anc));
-  }
-
-  function addArmLengthDims(g, r) {
-    const { xL, xR, cy } = r;
-    const pivX = r.xL + r.pivotFrac * r.span;
-    const maxR = Math.max(
-      r.left.type  === "disc" ? r.left.radius  : 0,
-      r.right.type === "disc" ? r.right.radius : 0,
-    );
-    const dy = cy + maxR + 48;
-    g.append(ext(xL,   cy, xL,   dy),
-             ext(pivX, cy, pivX, dy),
-             ext(xR,   cy, xR,   dy));
-    g.appendChild(arrow(xL,   dy, pivX, dy));
-    g.appendChild(arrow(pivX, dy, xR,   dy));
-    g.appendChild(mktext((xL + pivX) / 2, dy - 10, String(R(pivX - xL)), "txt", "middle"));
-    g.appendChild(mktext((pivX + xR) / 2, dy - 10, String(R(xR - pivX)), "txt", "middle"));
-  }
-
-  function addGroundDims(r) {
-    const g     = r.outerGroup;                      // follows parent-shift; stays horizontal
-    const { cy } = r;
-    const hangX  = r.cx;
-    const f      = r.pivotFrac;
-    const sxL    = hangX - f * r.span;
-    const sxR    = hangX + (1 - f) * r.span;
-    const wL     = getSubtreeWeight(r.left);
-    const wR     = getSubtreeWeight(r.right);
-    const idealX = (wL * sxL + wR * sxR) / (wL + wR);
-    const pivX   = hangX;
-    const gap    = Math.abs(pivX - idealX);
-
-    g.appendChild(mktext(idealX, cy + 58, "ideal", "txt-d", "middle"));
-    g.appendChild(S("line", {
-      x1: idealX, y1: cy + 44, x2: idealX, y2: cy + 3,
-      class: "dim", "marker-end": "url(#arw)",
-    }));
-
-    if (gap > 3) {
-      const dy = cy - 44;
-      g.append(ext(pivX,   cy, pivX,   dy),
-               ext(idealX, cy, idealX, dy));
-      g.appendChild(arrow(pivX, dy, idealX, dy));
-      g.appendChild(mktext(
-        (pivX + idealX) / 2, dy - 10,
-        "Δ " + R(gap), "txt", "middle",
-      ));
-    }
-  }
-
-  // Adds per-rod callouts after tilt. Disc details are skipped on narrow screens.
-  function addCallouts(r) {
-    const narrow = window.innerWidth < 560;
-    if (!narrow) {
-      if (r.left.type  === "disc") discCallout(r.svgGroup, r.xL, r.cy, r.left.radius,  getSubtreeWeight(r.left),  -1);
-      else                          rodArmCallout(r.svgGroup, r.xL, r.cy, getSubtreeWeight(r.left),  -1);
-      if (r.right.type === "disc") discCallout(r.svgGroup, r.xR, r.cy, r.right.radius, getSubtreeWeight(r.right), +1);
-      else                          rodArmCallout(r.svgGroup, r.xR, r.cy, getSubtreeWeight(r.right), +1);
-    }
-    addArmLengthDims(r.svgGroup, r);
-    addGroundDims(r);
-  }
-
-  // Lean-angle label above the hang point — lives in outerGroup so it follows parent shifts.
-  function addScoreLabel(r) {
-    const lean  = Math.abs(r.leanDeg);
-    const label = lean < PERFECT ? "0°" : lean.toFixed(1) + "°";
-    const cls   = lean < PERFECT ? "txt" : "txt-d";
-    r.outerGroup.appendChild(mktext(r.cx, r.cy - 80, label, cls, "middle"));
-  }
-
   // ── Renderer ─────────────────────────────────────────────────────────────────
   function drawRod(g, r) {
     const { xL, xR, cy } = r;
@@ -455,12 +370,10 @@
     if (rIsDisc) g.appendChild(mkline(solidR, cy, xR,     cy, "dash"));
 
     if (lIsDisc) {
-      g.appendChild(S("circle", { cx: xL, cy, r: r.left.radius,  class: "ring" }));
-      g.appendChild(S("circle", { cx: xL, cy, r: 3,              class: "dot"  }));
+      g.appendChild(S("circle", { cx: xL, cy, r: r.left.radius,  fill: r.left.color  || DISC_COLORS[0] }));
     }
     if (rIsDisc) {
-      g.appendChild(S("circle", { cx: xR, cy, r: r.right.radius, class: "ring" }));
-      g.appendChild(S("circle", { cx: xR, cy, r: 3,              class: "dot"  }));
+      g.appendChild(S("circle", { cx: xR, cy, r: r.right.radius, fill: r.right.color || DISC_COLORS[1] }));
     }
   }
 
@@ -493,9 +406,6 @@
 
   function draw() {
     while (svg.firstChild) svg.removeChild(svg.firstChild);
-    svg.appendChild(buildDefs());
-    svg.appendChild(S("rect", { x: -9999, y: -9999, width: 19998, height: 19998, fill: "url(#gmin)" }));
-    svg.appendChild(S("rect", { x: -9999, y: -9999, width: 19998, height: 19998, fill: "url(#gmaj)" }));
     renderTree(root);
     applyViewBox(overviewViewBox());
   }
@@ -505,18 +415,15 @@
     reviewMode = true;
     document.body.classList.add("review");
 
-    // Draw score labels on all settled rods
-    function walkLabels(arm) {
-      if (arm.type === "disc") return;
-      if (arm.pivotFrac !== null) addScoreLabel(arm);
-      walkLabels(arm.left);
-      walkLabels(arm.right);
-    }
-    walkLabels(root);
+    stats.lean  += totalLean(root);
+    stats.score += levelScore(root);
+    document.getElementById("stScore").textContent = stats.score;
 
-    stats.total += totalScore(root);
-    document.getElementById("stScore").textContent = stats.total.toFixed(1) + "°";
-    document.getElementById("endBtns").classList.add("show");
+    const endBtns = document.getElementById("endBtns");
+    if (stats.lean > GAME_OVER_THRESHOLD) {
+      endBtns.classList.add("gameover");
+    }
+    endBtns.classList.add("show");
   }
 
   // ── Interaction ──────────────────────────────────────────────────────────────
@@ -526,13 +433,15 @@
   }
 
   function addGhost() {
-    ghostLine = mkline(0, -9999, 0, 9999, "ghost");
-    svg.appendChild(ghostLine);
-    updateGhost(window.innerWidth / 2);
+    // Ghost is created lazily on first pointer interaction, not immediately on rod activation.
   }
 
   function updateGhost(clientX) {
-    if (!ghostLine || !activeRod) return;
+    if (!activeRod) return;
+    if (!ghostLine) {
+      ghostLine = mkline(0, -9999, 0, 9999, "ghost");
+      svg.appendChild(ghostLine);
+    }
     const x = clamp(clientToWorldX(clientX), activeRod.xL, activeRod.xR);
     ghostLine.setAttribute("x1", x);
     ghostLine.setAttribute("x2", x);
@@ -582,7 +491,6 @@
     // String stays vertical — the rod slides to hang below it (handled in animateTilt).
     const settled = activeRod;
     animateTilt(settled, () => {
-      addCallouts(settled);
       transitioning = false;
       advance(settled);
     });
@@ -724,7 +632,7 @@
     touchX         = null;
     document.body.classList.remove("review", "panning");
     document.getElementById("stLevel").textContent = level;
-    document.getElementById("endBtns").classList.remove("show");
+    document.getElementById("endBtns").classList.remove("show", "gameover");
     root = buildLevel(level);
     activeRod = null; ghostLine = null; transitioning = false;
     layoutTree(root);
@@ -753,9 +661,11 @@
   });
 
   document.getElementById("startOverBtn").addEventListener("click", () => {
-    stats.total = 0;
+    stats.score = 0;
+    stats.lean  = 0;
     level = 1;
     document.getElementById("stScore").textContent = "—";
+    document.getElementById("endBtns").classList.remove("gameover");
     newRound();
     startRound();
   });

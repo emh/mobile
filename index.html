@@ -6,13 +6,13 @@
   <title>Fulcrum</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Baumans&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <svg id="sheet" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet"></svg>
 
-  <div class="overlay" id="title">fulcrum</div>
+  <div class="overlay" id="title">mobile</div>
 
   <div class="overlay" id="stats">
     <div class="k">Level</div><div class="v" id="stLevel">1</div>
@@ -20,28 +20,29 @@
   </div>
 
   <div id="endBtns">
+    <span id="gameOverLabel">game over</span>
     <button id="startOverBtn" type="button">start over</button>
     <button id="nextLevelBtn" type="button">next level</button>
   </div>
 
   <div id="intro">
     <div class="intro-card" role="dialog" aria-label="How to play">
-      <h1>fulcrum</h1>
+      <h1>mobile</h1>
       <div class="intro-rule"></div>
       <svg class="intro-dia" viewBox="0 0 260 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <line x1="130" y1="18" x2="130" y2="50" class="string" />
         <g transform="rotate(7 130 50)">
           <line x1="46" y1="50" x2="214" y2="50" class="ln" />
-          <circle cx="46"  cy="50" r="16" class="ring" />
-          <circle cx="214" cy="50" r="22" class="ring" />
+          <circle cx="46"  cy="50" r="16" style="fill:#CC2200;stroke:#111;stroke-width:1.5" />
+          <circle cx="214" cy="50" r="22" style="fill:#0033AA;stroke:#111;stroke-width:1.5" />
           <circle cx="46"  cy="50" r="2.4" class="dot" />
           <circle cx="214" cy="50" r="2.4" class="dot" />
         </g>
         <line x1="130" y1="50" x2="130" y2="110" class="string" />
         <g transform="rotate(-5 130 90)">
           <line x1="88" y1="90" x2="172" y2="90" class="ln" />
-          <circle cx="88"  cy="90" r="12" class="ring" />
-          <circle cx="172" cy="90" r="18" class="ring" />
+          <circle cx="88"  cy="90" r="12" style="fill:#F5C400;stroke:#111;stroke-width:1.5" />
+          <circle cx="172" cy="90" r="18" style="fill:#CC2200;stroke:#111;stroke-width:1.5" />
           <circle cx="88"  cy="90" r="2" class="dot" />
           <circle cx="172" cy="90" r="2" class="dot" />
         </g>
