@@ -10,15 +10,21 @@ body {
   background: var(--paper);
   color: var(--ink);
   overflow: hidden;
+  overscroll-behavior: none;
   cursor: crosshair;
   -webkit-user-select: none;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
   font-family: "Baumans", sans-serif;
 }
 body.review         { cursor: grab; }
 body.review.panning { cursor: grabbing; }
 
-svg#sheet { position: fixed; inset: 0; display: block; }
+/* Canvas owns all gestures — the game handles pinch/pan itself, so tell the
+   browser not to scroll, zoom, or fire a tap delay on it. */
+svg#sheet { position: fixed; inset: 0; display: block; touch-action: none; }
+
+button { touch-action: manipulation; }
 
 /* ---- SVG element styling ---- */
 .grid-min { stroke: rgba(0,0,0,.04);  stroke-width: 1; }
@@ -45,7 +51,8 @@ svg#sheet { position: fixed; inset: 0; display: block; }
 .overlay { position: fixed; pointer-events: none; }
 
 #title {
-  top: 22px; left: 30px;
+  top: calc(22px + env(safe-area-inset-top));
+  left: calc(30px + env(safe-area-inset-left));
   font-size: 26px; font-weight: 400; letter-spacing: 8px;
   text-transform: uppercase;
   opacity: .88;
@@ -57,7 +64,8 @@ svg#sheet { position: fixed; inset: 0; display: block; }
 }
 
 #stats {
-  top: 24px; right: 30px;
+  top: calc(24px + env(safe-area-inset-top));
+  right: calc(30px + env(safe-area-inset-right));
   display: grid; grid-template-columns: auto auto;
   gap: 2px 16px; text-align: right;
   font-size: 17px;
@@ -69,10 +77,13 @@ svg#sheet { position: fixed; inset: 0; display: block; }
 /* ---- end-of-level buttons ---- */
 #endBtns {
   position: fixed;
-  bottom: 28px;
+  bottom: calc(28px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: calc(100vw - 32px);
   gap: 16px;
   opacity: 0;
   pointer-events: none;
@@ -191,3 +202,16 @@ svg#sheet { position: fixed; inset: 0; display: block; }
 }
 .intro-card button:hover  { background: rgba(0,0,0,.07); }
 .intro-card button:active { transform: translateY(1px); }
+
+/* ---- small screens / phones ---- */
+@media (max-width: 480px) {
+  #title { top: calc(16px + env(safe-area-inset-top)); left: calc(20px + env(safe-area-inset-left)); font-size: 21px; letter-spacing: 6px; }
+  #stats { top: calc(18px + env(safe-area-inset-top)); right: calc(20px + env(safe-area-inset-right)); font-size: 15px; }
+  #endBtns { gap: 10px; bottom: calc(18px + env(safe-area-inset-bottom)); }
+  #endBtns button { padding: 11px 20px; font-size: 14px; letter-spacing: 2px; }
+  #gameOverLabel { padding: 8px 0; }
+  .intro-card { padding: 26px 24px 24px; }
+  .intro-card h1 { font-size: 22px; letter-spacing: 6px; }
+  .intro-card p { font-size: 15px; }
+  .share-actions { flex-wrap: wrap; justify-content: center; }
+}

@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mobile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Mobile — a balance puzzle</title>
   <meta name="description" content="A Calder-inspired physics puzzle. Set the balance point on each rod. How far can you go?" />
+  <link rel="canonical" href="https://emh.io/mobile" />
 
   <!-- Open Graph -->
   <meta property="og:type"        content="website" />
@@ -21,7 +22,21 @@
   <meta name="twitter:description" content="A Calder-inspired physics puzzle. Set the balance point on each rod. How far can you go?" />
   <meta name="twitter:image"       content="https://emh.io/mobile/og.png" />
 
+  <!-- PWA + iOS -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#F4F1EA" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Mobile" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+
+  <!-- favicons -->
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baumans&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
@@ -86,6 +101,10 @@
   </div>
 
   <script src="game.js"></script>
+  <script>
+    if ('serviceWorker' in navigator)
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  </script>
   <script async data-id="101507205" src="//static.getclicky.com/js"></script>
 </body>
 </html>
