@@ -143,8 +143,10 @@
   let level          = 1;
   let activeRod      = null;
   let ghostLine      = null;
+  let ghostDot       = null;
   let transitioning  = false;
   let touchX         = null;
+  let fingerDown     = false;
   let reviewMode     = false;
   let isPanning      = false;
   let didPan         = false;
@@ -285,6 +287,48 @@
   }
 
   // ── Bounding box ─────────────────────────────────────────────────────────────
+
+  // Visual bounds accounting for the actual lean/slide transforms on each settled rod.
+  // hangX/hangY is the world-space rotation center (cx in world space) of arm.
+  // Child rods hang VGAP below their parent's visual arm endpoint (strings are always vertical).
+  function getVisualBounds() {
+    const b = { x1: Infinity, x2: -Infinity, y1: Infinity, y2: -Infinity };
+    function exp(x, y, r) {
+      r = r || 0;
+      b.x1 = Math.min(b.x1, x - r); b.x2 = Math.max(b.x2, x + r);
+      b.y1 = Math.min(b.y1, y - r); b.y2 = Math.max(b.y2, y + r);
+    }
+    exp(root.cx, root.cy - VGAP * 0.5); // ceiling string top
+
+    function walk(arm, hangX, hangY) {
+      if (arm.type !== "rod") return;
+      exp(hangX, hangY);
+      if (arm.pivotFrac === null) {
+        // Unsettled — fall back to layout positions
+        exp(arm.xL, arm.cy); exp(arm.xR, arm.cy);
+        if (arm.left.type  === "disc") exp(arm.xL, arm.cy, arm.left.radius);
+        else                           walk(arm.left,  arm.xL, arm.cy + VGAP);
+        if (arm.right.type === "disc") exp(arm.xR, arm.cy, arm.right.radius);
+        else                           walk(arm.right, arm.xR, arm.cy + VGAP);
+        return;
+      }
+      const theta = arm.leanDeg * Math.PI / 180;
+      const cos = Math.cos(theta), sin = Math.sin(theta);
+      // Visual arm endpoint offsets from hang point (after slide + rotate)
+      const lOff = -arm.pivotFrac * arm.span;
+      const rOff = (1 - arm.pivotFrac) * arm.span;
+      const lx = hangX + lOff * cos, ly = hangY + lOff * sin;
+      const rx = hangX + rOff * cos, ry = hangY + rOff * sin;
+      exp(lx, ly); exp(rx, ry);
+      if (arm.left.type  === "disc") exp(lx, ly, arm.left.radius);
+      else                           walk(arm.left,  lx, ly + VGAP);
+      if (arm.right.type === "disc") exp(rx, ry, arm.right.radius);
+      else                           walk(arm.right, rx, ry + VGAP);
+    }
+    walk(root, root.cx, root.cy);
+    return b;
+  }
+
   function getBounds(arm, b) {
     b = b || { x1: Infinity, x2: -Infinity, y1: Infinity, y2: -Infinity };
     if (arm.type === "disc") {
@@ -553,9 +597,18 @@
       ghostLine = mkline(0, -9999, 0, 9999, "ghost");
       svg.appendChild(ghostLine);
     }
-    const x = clamp(clientToWorldX(clientX), activeRod.xL, activeRod.xR);
+    if (!ghostDot) {
+      ghostDot = S("circle", { r: 5, class: "ghost-dot" });
+      svg.appendChild(ghostDot);
+    }
+    const r = activeRod;
+    const x = clamp(clientToWorldX(clientX), r.xL, r.xR);
+    const t = (x - r.xL) / r.span;
+    const y = r.cy + 2 * t * (1 - t) * r.bow;
     ghostLine.setAttribute("x1", x);
     ghostLine.setAttribute("x2", x);
+    ghostDot.setAttribute("cx", x);
+    ghostDot.setAttribute("cy", y);
   }
 
   function advance(prevRod) {
@@ -570,7 +623,8 @@
 
     transitioning = true;
     animateViewBox(currentViewBox(), rodViewBox(next), 600, () => {
-      activeRod = next; transitioning = false; addGhost();
+      activeRod = next; transitioning = false;
+      if (fingerDown && touchX !== null) updateGhost(touchX);
     });
   }
 
@@ -583,6 +637,7 @@
     activeRod.leanDeg   = computeLean(activeRod);
 
     if (ghostLine) { ghostLine.remove(); ghostLine = null; }
+    if (ghostDot)  { ghostDot.remove();  ghostDot  = null; }
 
     // Animate back to the ideal view first, then lean.
     const settled = activeRod;
@@ -656,6 +711,7 @@
       touchX         = null;
       panTouchStart  = null;
       if (ghostLine) { ghostLine.remove(); ghostLine = null; }
+      if (ghostDot)  { ghostDot.remove();  ghostDot  = null; }
       const t0 = e.touches[0], t1 = e.touches[1];
       pinchStartDist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
       pinchStartMid  = { x: (t0.clientX + t1.clientX) / 2, y: (t0.clientY + t1.clientY) / 2 };
@@ -669,8 +725,9 @@
       pinchStartDist = 0;
       return;
     }
-    if (transitioning || !activeRod) return;
+    fingerDown = true;
     touchX = e.touches[0].clientX;
+    if (transitioning || !activeRod) return;
     updateGhost(touchX);
   }, { passive: false });
 
@@ -716,6 +773,7 @@
     if (e.touches.length === 0) {
       wasMultiTouch = false;
       panTouchStart = null;
+      fingerDown    = false;
     }
     if (wasMultiTouch || reviewMode) return;
     if (transitioning || !activeRod || touchX == null) return;
@@ -728,6 +786,148 @@
     if (activeRod) applyViewBox(rodViewBox(activeRod));
     else           applyViewBox(overviewViewBox());
   });
+
+  // ── Share ─────────────────────────────────────────────────────────────────
+
+  // Build a self-contained SVG clone of the current mobile at overview zoom,
+  // with all CSS inlined (no external stylesheet needed for export).
+  function buildShareSvg() {
+    // Compute bounds from actual visual (post-tilt) positions, not layout coords.
+    const pad  = 60;
+    const b    = getVisualBounds();
+    const vb   = { vx: b.x1 - pad, vy: b.y1 - pad, vw: b.x2 - b.x1 + 2 * pad, vh: b.y2 - b.y1 + 2 * pad };
+    const aspect = vb.vw / vb.vh;
+    const W    = 1200, H = Math.round(W / aspect);
+
+    const clone = svg.cloneNode(true);
+    clone.removeAttribute("id");
+    clone.setAttribute("viewBox",  `${vb.vx} ${vb.vy} ${vb.vw} ${vb.vh}`);
+    clone.setAttribute("width",  W);
+    clone.setAttribute("height", H);
+    clone.setAttribute("xmlns",  "http://www.w3.org/2000/svg");
+
+    // Background rect so PNG isn't transparent
+    const bg = document.createElementNS(SVGNS, "rect");
+    bg.setAttribute("x", vb.vx);  bg.setAttribute("y", vb.vy);
+    bg.setAttribute("width", vb.vw); bg.setAttribute("height", vb.vh);
+    bg.setAttribute("fill", "#F4F1EA");
+    clone.insertBefore(bg, clone.firstChild);
+
+    // Inline all the class-based styles (resolve CSS vars to literals)
+    const style = document.createElementNS(SVGNS, "style");
+    style.textContent = [
+      ".ln     { fill:none; stroke:#111111; stroke-width:3; stroke-linecap:round; }",
+      ".ring   { fill:none; stroke:#111111; stroke-width:2; }",
+      ".dot    { fill:#111111; }",
+      ".string { fill:none; stroke:#111111; stroke-width:1; opacity:.4; }",
+      ".ghost     { display:none; }",
+      ".ghost-dot { display:none; }",
+      ".lbl-lean { font-family:sans-serif; fill:#111111; font-size:19px; letter-spacing:1px; }",
+    ].join("\n");
+    clone.insertBefore(style, clone.firstChild);
+
+    return { el: clone, w: W, h: H };
+  }
+
+  // Rasterise a self-contained SVG element to a PNG Blob.
+  function svgToPngBlob(svgEl, w, h) {
+    return new Promise((resolve, reject) => {
+      const xml  = new XMLSerializer().serializeToString(svgEl);
+      const blob = new Blob([xml], { type: "image/svg+xml;charset=utf-8" });
+      const url  = URL.createObjectURL(blob);
+      const img  = new Image();
+      img.onload = () => {
+        const canvas  = document.createElement("canvas");
+        canvas.width  = w; canvas.height = h;
+        const ctx     = canvas.getContext("2d");
+        ctx.fillStyle = "#F4F1EA";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(pngBlob => pngBlob ? resolve(pngBlob) : reject(new Error("toBlob failed")), "image/png");
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("img load failed")); };
+      img.src = url;
+    });
+  }
+
+  async function doShare() {
+    const btn       = document.getElementById("shareDoBtn");
+    const origText  = btn.textContent;
+    const shareText = `I reached level ${level} on Mobile with a score of ${stats.score}`;
+    const shareUrl  = "https://emh.io/mobile";
+
+    btn.textContent = "…";
+    btn.disabled    = true;
+
+    try {
+      const { el, w, h } = buildShareSvg();
+      const pngBlob = await svgToPngBlob(el, w, h);
+      const file    = new File([pngBlob], "mobile.png", { type: "image/png" });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text: shareText, url: shareUrl });
+      } else if (navigator.share) {
+        await navigator.share({ text: `${shareText}\n${shareUrl}` });
+      } else {
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        btn.textContent = "copied!";
+        setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
+        return;
+      }
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        // Last-resort: silently try clipboard
+        navigator.clipboard.writeText(`${shareText}\n${shareUrl}`).catch(() => {});
+      }
+    }
+    btn.textContent = origText;
+    btn.disabled    = false;
+  }
+
+  async function doCopyImage() {
+    const btn      = document.getElementById("shareCopyImgBtn");
+    const origText = btn.textContent;
+    btn.textContent = "…";
+    btn.disabled    = true;
+    try {
+      const { el, w, h } = buildShareSvg();
+      const pngBlob = await svgToPngBlob(el, w, h);
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": pngBlob }),
+      ]);
+      btn.textContent = "copied!";
+      setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
+      return;
+    } catch (err) {
+      console.error("Copy image failed:", err);
+    }
+    btn.textContent = origText;
+    btn.disabled    = false;
+  }
+
+  function openShareModal() {
+    const modal   = document.getElementById("shareModal");
+    const preview = document.getElementById("sharePreview");
+    const caption = document.getElementById("shareCaption");
+
+    // Show the modal immediately so it's never silently blocked by a preview error.
+    caption.textContent = `Level ${level}  ·  Score ${stats.score}`;
+    modal.classList.add("show");
+
+    // Build and inject the preview SVG (fails gracefully — modal still shows).
+    while (preview.firstChild) preview.removeChild(preview.firstChild);
+    try {
+      const { el, w, h } = buildShareSvg();
+      // Size the clone to the preview container via an explicit aspect-ratio box.
+      el.setAttribute("width",  "100%");
+      el.setAttribute("height", "100%");
+      el.style.aspectRatio = `${w} / ${h}`;
+      preview.appendChild(el);
+    } catch (err) {
+      console.error("Share preview failed:", err);
+    }
+  }
 
   // ── Round / level lifecycle ────────────────────────────────────────────────
   function startRound() {
@@ -757,11 +957,13 @@
     panTouchStart  = null;
     wasMultiTouch  = false;
     touchX         = null;
+    fingerDown     = false;
     document.body.classList.remove("review", "panning");
     document.getElementById("stLevel").textContent = level;
     document.getElementById("endBtns").classList.remove("show", "gameover");
+    document.getElementById("shareModal").classList.remove("show");
     root = buildLevel(level);
-    activeRod = null; ghostLine = null; transitioning = false;
+    activeRod = null; ghostLine = null; ghostDot = null; transitioning = false;
     layoutTree(root);
     draw();
   }
@@ -780,6 +982,18 @@
       setTimeout(startRound, 450);
     }
   }, { passive: false });
+
+  document.getElementById("shareBtn").addEventListener("click", openShareModal);
+  document.getElementById("shareDoBtn").addEventListener("click", doShare);
+  document.getElementById("shareCopyImgBtn").addEventListener("click", doCopyImage);
+  document.getElementById("shareCloseBtn").addEventListener("click", () => {
+    document.getElementById("shareModal").classList.remove("show");
+  });
+  document.getElementById("shareModal").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("shareModal")) {
+      document.getElementById("shareModal").classList.remove("show");
+    }
+  });
 
   document.getElementById("nextLevelBtn").addEventListener("click", () => {
     level += 1;
