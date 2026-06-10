@@ -1,7 +1,7 @@
 // Cache the local app shell only; let cross-origin requests (fonts, analytics)
 // hit the network. The fetch handler is what makes Chrome/Android offer "Install".
 // Bump CACHE on every deploy that changes a cached file, or users get stale assets.
-const CACHE = 'mobile-v1';
+const CACHE = 'mobile-v2';
 const ASSETS = [
   './', './index.html', './style.css', './game.js', './manifest.webmanifest',
   './favicon.svg', './favicon.ico', './favicon-32.png', './favicon-16.png',

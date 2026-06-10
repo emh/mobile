@@ -101,6 +101,15 @@ button { touch-action: manipulation; }
 }
 #endBtns.gameover #gameOverLabel { display: block; }
 #endBtns.gameover #nextLevelBtn  { display: none; }
+#bestLabel {
+  display: none;
+  font-size: 15px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--ink-2);
+  align-self: center;
+  padding: 10px 0;
+}
+#endBtns.gameover #bestLabel { display: block; }
+#bestLabel b { color: var(--ink); font-variant-numeric: tabular-nums; }
 #endBtns button {
   font-family: "Baumans", sans-serif;
   font-size: 16px;
@@ -203,13 +212,28 @@ button { touch-action: manipulation; }
 .intro-card button:hover  { background: rgba(0,0,0,.07); }
 .intro-card button:active { transform: translateY(1px); }
 
+/* ---- intro high-score line ---- */
+.intro-best {
+  margin: 6px auto 0 !important;
+  font-size: 13px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--ink-2);
+}
+.intro-best b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 400; }
+
 /* ---- small screens / phones ---- */
 @media (max-width: 480px) {
   #title { top: calc(16px + env(safe-area-inset-top)); left: calc(20px + env(safe-area-inset-left)); font-size: 21px; letter-spacing: 6px; }
   #stats { top: calc(18px + env(safe-area-inset-top)); right: calc(20px + env(safe-area-inset-right)); font-size: 15px; }
-  #endBtns { gap: 10px; bottom: calc(18px + env(safe-area-inset-bottom)); }
-  #endBtns button { padding: 11px 20px; font-size: 14px; letter-spacing: 2px; }
-  #gameOverLabel { padding: 8px 0; }
+  /* Stack the end-of-level controls so each fits comfortably on its own line. */
+  #endBtns {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    width: min(280px, calc(100vw - 48px));
+  }
+  #endBtns button { width: 100%; padding: 13px 20px; font-size: 14px; letter-spacing: 2px; }
+  #gameOverLabel, #bestLabel { text-align: center; padding: 2px 0; }
   .intro-card { padding: 26px 24px 24px; }
   .intro-card h1 { font-size: 22px; letter-spacing: 6px; }
   .intro-card p { font-size: 15px; }

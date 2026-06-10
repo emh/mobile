@@ -12,15 +12,11 @@
   <meta property="og:url"         content="https://emh.io/mobile" />
   <meta property="og:title"       content="Mobile" />
   <meta property="og:description" content="A Calder-inspired physics puzzle. Set the balance point on each rod. How far can you go?" />
-  <meta property="og:image"       content="https://emh.io/mobile/og.png" />
-  <meta property="og:image:width"  content="1200" />
-  <meta property="og:image:height" content="630" />
 
   <!-- Twitter / X -->
-  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:card"        content="summary" />
   <meta name="twitter:title"       content="Mobile" />
   <meta name="twitter:description" content="A Calder-inspired physics puzzle. Set the balance point on each rod. How far can you go?" />
-  <meta name="twitter:image"       content="https://emh.io/mobile/og.png" />
 
   <!-- PWA + iOS -->
   <link rel="manifest" href="manifest.webmanifest" />
@@ -54,6 +50,7 @@
 
   <div id="endBtns">
     <span id="gameOverLabel">game over</span>
+    <span id="bestLabel"></span>
     <button id="shareBtn"    type="button">share</button>
     <button id="startOverBtn" type="button">start over</button>
     <button id="nextLevelBtn" type="button">next level</button>
@@ -96,6 +93,7 @@
       <p>Unequal weights hang from a mobile.</p>
       <p>Drag to place each <em>balance point</em> — start from the bottom, work up. Release to set. Aim for 0&deg; lean on every rod.</p>
       <p><em>Pinch to zoom &middot; drag to pan</em></p>
+      <p id="introBest" class="intro-best" hidden></p>
       <button type="button" id="beginBtn">begin</button>
     </div>
   </div>

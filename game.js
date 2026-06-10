@@ -159,6 +159,12 @@
 
   const stats = { score: 0, lean: 0 };
 
+  // High score persists across sessions (localStorage may be unavailable in
+  // private mode / sandboxed contexts — fail silently if so).
+  const HS_KEY = "mobile-highscore";
+  let highScore = 0;
+  try { highScore = parseInt(localStorage.getItem(HS_KEY), 10) || 0; } catch (e) {}
+
   // ── Arm constructors ─────────────────────────────────────────────────────────
   const disc = () => {
     const kind = SHAPE_KINDS[Math.floor(Math.random() * SHAPE_KINDS.length)];
@@ -565,6 +571,11 @@
     const levelLean = totalLean(root);
     const prev      = stats.score;
     stats.score    += levelScore(root);
+    const newBest = stats.score > highScore;
+    if (newBest) {
+      highScore = stats.score;
+      try { localStorage.setItem(HS_KEY, String(highScore)); } catch (e) {}
+    }
     const scoreEl   = document.getElementById("stScore");
     const DUR = 1400, start = performance.now();
     (function frame(now) {
@@ -577,6 +588,8 @@
     const endBtns = document.getElementById("endBtns");
     if (levelLean > GAME_OVER_THRESHOLD) {
       endBtns.classList.add("gameover");
+      const bl = document.getElementById("bestLabel");
+      bl.innerHTML = newBest ? `New Best <b>${highScore}</b>` : `Best <b>${highScore}</b>`;
     }
     endBtns.classList.add("show");
   }
@@ -969,6 +982,13 @@
   }
 
   // ── Boot ─────────────────────────────────────────────────────────────────────
+  function renderIntroBest() {
+    const el = document.getElementById("introBest");
+    if (highScore > 0) { el.innerHTML = `Best Score <b>${highScore}</b>`; el.hidden = false; }
+    else el.hidden = true;
+  }
+  renderIntroBest();
+
   const intro = document.getElementById("intro");
   intro.addEventListener("click", (e) => {
     if (e.target === intro || e.target.id === "beginBtn") {
