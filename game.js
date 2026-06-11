@@ -905,9 +905,13 @@
     btn.disabled    = true;
     try {
       const { el, w, h } = buildShareSvg();
-      const pngBlob = await svgToPngBlob(el, w, h);
+      // Safari/WebKit (desktop Safari + iOS PWA) requires clipboard.write to be
+      // called synchronously within the click gesture. Awaiting the blob first
+      // expires the user activation and the write is rejected. Passing a
+      // Promise<Blob> as the ClipboardItem value keeps the call synchronous and
+      // lets the browser resolve the blob itself.
       await navigator.clipboard.write([
-        new ClipboardItem({ "image/png": pngBlob }),
+        new ClipboardItem({ "image/png": svgToPngBlob(el, w, h) }),
       ]);
       btn.textContent = "copied!";
       setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
